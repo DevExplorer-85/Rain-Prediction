@@ -1,0 +1,272 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Weather Predict — Main</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+      --bg:#eef6fb;
+      --card:#ffffff;
+      --accent:#0b86c9;
+      --muted:#6b7280;
+      --shadow: 0 8px 26px rgba(12,40,70,0.06);
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial;
+      background:var(--bg);
+      color:#062033;
+      padding:30px 36px;
+    }
+
+    header { text-align:center; margin-bottom:18px; }
+    .brand { font-weight:700; font-size:30px; display:inline-flex; gap:10px; align-items:center;}
+    .brand svg{width:34px;height:34px; color:var(--accent)}
+    .sub{ color:var(--muted); margin-top:6px; font-size:14px }
+
+    /* Search */
+    .search-wrap { max-width:1150px; margin: 18px auto; display:flex; align-items:center; gap:12px; }
+    .search-input {
+      flex:1;
+      background:var(--card);
+      padding:12px 16px;
+      border-radius:12px;
+      display:flex;
+      align-items:center;
+      border:3px solid transparent;
+      box-shadow:var(--shadow);
+      transition: border-color .16s, box-shadow .16s;
+    }
+    .search-input:focus-within{ border-color:var(--accent); box-shadow:0 12px 30px rgba(11,134,201,0.06) }
+    .pin { margin-right:12px; color:var(--muted) }
+    .search-input input{ border:0; outline:0; font-size:16px; flex:1; padding:6px 0; background:transparent; }
+    .search-btn { width:54px; height:48px; border-radius:8px; background:var(--accent); color:#fff; border:0; cursor:pointer; box-shadow:0 8px 18px rgba(11,134,201,0.12) }
+
+    /* meta */
+    .meta { max-width:1150px; margin:18px auto 6px; display:flex; align-items:center; justify-content:space-between; gap:12px; }
+    .city { font-weight:700; font-size:18px; color:#083047 }
+    .conf { color:var(--muted); font-size:14px }
+
+    /* cards */
+    .grid { max-width:1150px; margin:10px auto; display:flex; gap:18px; align-items:stretch; flex-wrap:wrap; }
+    .card {
+      background:var(--card);
+      border-radius:12px;
+      padding:18px;
+      width:220px;
+      min-height:210px;
+      box-shadow:var(--shadow);
+      border:1px solid rgba(8,48,71,0.03);
+      text-align:center;
+      transition: transform .12s ease, box-shadow .12s ease;
+    }
+    .card.featured{
+      border:2px solid var(--accent);
+      transform: translateY(-6px);
+      box-shadow: 0 18px 40px rgba(11,134,201,0.06);
+    }
+    .day { font-weight:600; color:#07304a; margin-bottom:6px; }
+    .date { color:var(--muted); font-size:13px; margin-bottom:10px; }
+    .icon { width:56px; height:56px; margin:6px auto; }
+    .temp { font-size:26px; font-weight:800; margin:8px 0; color:#062033; }
+    .desc { color:var(--muted); font-size:14px; margin-bottom:8px; }
+    .hum { color:#3b5567; font-size:13px; }
+    .hint { max-width:1150px; margin:18px auto; color:var(--muted) }
+
+    /* small screen */
+    @media (max-width:880px){
+      .card{ width:calc(50% - 18px) }
+    }
+    @media (max-width:520px){
+      .grid{ gap:12px }
+      .card{ width:100% }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="brand">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M7 19h10a4 4 0 0 0 .6-7.98A6 6 0 0 0 6.4 7.5 4.5 4.5 0 0 0 7 19z" stroke="#0b86c9" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Weather Predict
+    </div>
+    <div class="sub">ML-powered weather forecasting</div>
+  </header>
+
+  <div class="search-wrap" role="search" aria-label="search form">
+    <div class="search-input" id="inputWrap">
+      <div class="pin" aria-hidden="true">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 11.5a2 2 0 1 0 0-4 2 2 0 0 0 0 4z" stroke="#6b7280" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M21 10c0 6-9 12-9 12S3 16 3 10a9 9 0 0 1 18 0z" stroke="#6b7280" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <input id="cityInput" type="text" placeholder="Enter city name..." aria-label="city to search" />
+    </div>
+    <button id="searchBtn" class="search-btn" title="Search">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M21 21l-4.35-4.35" stroke="white" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="11" cy="11" r="6" stroke="white" stroke-width="1.6"/></svg>
+    </button>
+  </div>
+
+  <div id="statusHint" class="hint">Enter a location to get weather predictions</div>
+
+  <div class="meta" id="meta" style="display:none">
+    <div class="city" id="cityName"></div>
+    <div class="conf" id="confidenceText"></div>
+  </div>
+
+  <div class="grid" id="cards"></div>
+
+<script>
+  // ----- CONFIG -----
+  // Change to your backend endpoint if you have one:
+  const API_BASE = "/api/weather"; // e.g. "http://localhost:5000/weather"
+  // Toggle this to true to preview UI without any backend:
+  const DEV_PREVIEW = true;
+  // ------------------
+
+  const input = document.getElementById('cityInput');
+  const btn = document.getElementById('searchBtn');
+  const statusHint = document.getElementById('statusHint');
+  const meta = document.getElementById('meta');
+  const cityNameEl = document.getElementById('cityName');
+  const confidenceEl = document.getElementById('confidenceText');
+  const cards = document.getElementById('cards');
+
+  const ICONS = {
+    rain: `<svg class="icon" viewBox="0 0 64 64" fill="none"><path d="M20 26a8 8 0 0 1 8-8h12a8 8 0 1 1 0 16H22" stroke="#0b86c9" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><path d="M22 46v6M30 44v8M38 46v6" stroke="#0b86c9" stroke-width="3" stroke-linecap="round"/></svg>`,
+    cloud: `<svg class="icon" viewBox="0 0 64 64" fill="none"><path d="M16 36a10 10 0 0 1 10-10h18a8 8 0 1 1 0 16H22" stroke="#2ea6e6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+    sun: `<svg class="icon" viewBox="0 0 64 64" fill="none"><circle cx="32" cy="30" r="8" stroke="#0b86c9" stroke-width="3"/><path d="M32 12v-6M32 48v6M16 30h-6M54 30h6M45 17l4-4M19 43l-4 4M45 43l4 4M19 17l-4-4" stroke="#0b86c9" stroke-width="2" stroke-linecap="round"/></svg>`,
+    wind: `<svg class="icon" viewBox="0 0 64 64" fill="none"><path d="M8 38h40a6 6 0 1 0-3-11" stroke="#0b86c9" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><path d="M14 28h26" stroke="#0b86c9" stroke-width="3" stroke-linecap="round"/></svg>`,
+    fog: `<svg class="icon" viewBox="0 0 64 64" fill="none"><path d="M12 40h40" stroke="#0b86c9" stroke-width="3" stroke-linecap="round"/><path d="M8 32h44" stroke="#0b86c9" stroke-width="3" stroke-linecap="round"/><path d="M16 48h36" stroke="#0b86c9" stroke-width="3" stroke-linecap="round"/></svg>`,
+    default: `<svg class="icon" viewBox="0 0 64 64" fill="none"><circle cx="32" cy="30" r="8" stroke="#0b86c9" stroke-width="3"/></svg>`
+  };
+
+  // sample data for dev preview
+  const SAMPLE = {
+    city: "mumbai",
+    confidence: 82,
+    forecast: [
+      {date: new Date().toISOString(), temp:24, unit:'C', desc:'Moderate rain', humidity:87, icon:'rain'},
+      {date: new Date(Date.now()+86400000).toISOString(), temp:18, unit:'C', desc:'Mostly cloudy', humidity:70, icon:'cloud'},
+      {date: new Date(Date.now()+86400000*2).toISOString(), temp:18, unit:'C', desc:'Clear skies', humidity:33, icon:'sun'},
+      {date: new Date(Date.now()+86400000*3).toISOString(), temp:23, unit:'C', desc:'Breezy conditions', humidity:66, icon:'wind'},
+      {date: new Date(Date.now()+86400000*4).toISOString(), temp:30, unit:'C', desc:'Light fog', humidity:79, icon:'fog'},
+    ]
+  };
+
+  function prettyDayLabel(dateStr, idx){
+    try {
+      const d = new Date(dateStr);
+      const now = new Date();
+      if (d.toDateString() === now.toDateString()) return "Today";
+      return d.toLocaleDateString(undefined, { weekday:'long', month:'short', day:'numeric' });
+    } catch(e){ return "Day" }
+  }
+
+  // Format displayed city: priority = user input (if non-empty) -> backend city -> ''
+  function displayedCity(backendCity) {
+    const typed = input.value.trim();
+    if (typed) return typed.toLowerCase();
+    if (backendCity) return backendCity.toLowerCase();
+    return '';
+  }
+
+  function render(data){
+    // show meta: prefer what user typed over backend city to avoid "always mumbai" issue
+    cityNameEl.textContent = displayedCity(data && data.city);
+    confidenceEl.textContent = (data && data.confidence !== undefined) ? `Confidence: ${data.confidence}%` : '';
+    meta.style.display = 'flex';
+    statusHint.style.display = 'none';
+
+    // cards
+    cards.innerHTML = '';
+    const list = (data && Array.isArray(data.forecast) && data.forecast.length) ? data.forecast.slice(0,5) : [];
+    if(list.length === 0){
+      cards.innerHTML = `<div style="padding:18px;color:var(--muted)">No forecast available</div>`;
+      return;
+    }
+    list.forEach((f, i) => {
+      const featured = i === 0 ? 'featured' : '';
+      const day = prettyDayLabel(f.date, i);
+      const dateShort = (() => { try { return new Date(f.date).toLocaleDateString(undefined,{month:'short', day:'numeric'}) } catch(e){return ''} })();
+      const iconHtml = ICONS[(f.icon||'').toLowerCase()] || ICONS.default;
+      const temp = (f.temp !== undefined) ? `${f.temp}°${f.unit||'C'}` : '--';
+      const desc = f.desc || f.condition || '';
+      const hum = (f.humidity !== undefined) ? `${f.humidity}% humidity` : '';
+
+      const el = document.createElement('div');
+      el.className = `card ${featured}`;
+      el.innerHTML = `
+        <div class="day">${day}</div>
+        <div class="date">${dateShort}</div>
+        ${iconHtml}
+        <div class="temp">${temp}</div>
+        <div class="desc">${desc}</div>
+        <div class="hum">${hum}</div>
+      `;
+      cards.appendChild(el);
+    });
+  }
+
+  async function searchCity(city){
+    const term = (city||'').trim();
+    if(!term){ statusHint.textContent = "Please type a city name."; statusHint.style.display='block'; return; }
+
+    // UI state
+    statusHint.textContent = `Looking up weather for "${term}"...`;
+    statusHint.style.display = 'block';
+    meta.style.display = 'none';
+    cards.innerHTML = '';
+
+    if(DEV_PREVIEW){
+      // show sample for dev quickly
+      setTimeout(()=> render(SAMPLE), 350);
+      return;
+    }
+
+    try {
+      // IMPORTANT: frontend does GET to `${API_BASE}?city=...`
+      // If your backend expects POST or a different path, change this call accordingly.
+      const resp = await fetch(`${API_BASE}?city=${encodeURIComponent(term)}`, { cache:'no-store' });
+      if(!resp.ok){
+        // show helpful error with server status
+        const txt = await resp.text().catch(()=>resp.statusText);
+        throw new Error(`Server ${resp.status}: ${txt}`);
+      }
+      const data = await resp.json();
+
+      // basic validation: we expect { city, confidence, forecast: [...] }
+      if(!data || !Array.isArray(data.forecast)) throw new Error('Invalid response structure from backend. Expected {city,confidence,forecast:[...]}');
+
+      render(data);
+    } catch(err){
+      // show error, but also display typed city so user sees what they searched for
+      const typedCity = input.value.trim();
+      cityNameEl.textContent = typedCity ? typedCity.toLowerCase() : '';
+      meta.style.display = typedCity ? 'flex' : 'none';
+      statusHint.textContent = `Error: ${err.message}`;
+      statusHint.style.display = 'block';
+      console.error(err);
+    }
+  }
+
+  // events
+  btn.addEventListener('click', ()=> searchCity(input.value));
+  input.addEventListener('keyup', (e)=> { if(e.key === 'Enter') searchCity(input.value) });
+
+  // helpful keyboard dev preview (Ctrl+Shift+P) to render sample without backend
+  document.addEventListener('keydown', (e)=>{
+    if(e.ctrlKey && e.shiftKey && e.key.toLowerCase()==='p'){
+      render(SAMPLE);
+    }
+  });
+
+  // If you want to demo immediately without a backend, set DEV_PREVIEW = true above.
+  if(DEV_PREVIEW) render(SAMPLE);
+
+</script>
+</body>
+</html>
